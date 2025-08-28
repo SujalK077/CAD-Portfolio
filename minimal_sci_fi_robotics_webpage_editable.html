@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Axiom Robotics Lab — Minimal Sci‑Fi (Editable)</title>
+  <style>
+    /* ====== Minimal Sci‑Fi Theme ====== */
+    :root {
+      --bg: #0b0f14;
+      --panel: #0f141b;
+      --text: #e6f1ff;
+      --muted: #8aa1b6;
+      --accent: #39d5ff; /* neon cyan */
+      --accent-2: #7af0c6; /* mint */
+      --ring: rgba(57,213,255,0.4);
+      --shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    [data-theme="light"] {
+      --bg: #f6f9fc;
+      --panel: #ffffff;
+      --text: #0b0f14;
+      --muted: #516173;
+      --accent: #0ea5e9;
+      --accent-2: #14b8a6;
+      --ring: rgba(14,165,233,0.25);
+      --shadow: 0 10px 30px rgba(2,6,23,0.08);
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 700px at 80% -10%, rgba(57,213,255,0.08), transparent 60%),
+                  radial-gradient(900px 500px at -10% 100%, rgba(122,240,198,0.08), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* Header */
+    header {
+      display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;
+      position: sticky; top: 0; backdrop-filter: blur(8px);
+      background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0));
+      border-bottom: 1px solid rgba(122,240,198,0.12);
+      z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px var(--ring), inset 0 0 20px rgba(255,255,255,0.25);
+    }
+    h1 { font-size: clamp(18px, 4vw, 22px); margin: 0; letter-spacing: 0.04em; }
+    .muted { color: var(--muted); }
+
+    .toolbar { display: flex; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-radius: 14px; border: 1px solid rgba(122,240,198,0.18);
+      background: var(--panel); color: var(--text); cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .15s ease, border-color .2s ease, background .2s ease;
+      user-select: none;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+    .btn:active { transform: translateY(0); }
+
+    /* Hero */
+    .hero {
+      display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; align-items: center;
+      padding: 40px 0 18px;
+    }
+    .title { font-size: clamp(28px, 6vw, 54px); line-height: 1.05; margin: 0 0 10px; }
+    .subtitle { font-size: clamp(14px, 2.6vw, 18px); margin: 0; color: var(--muted); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; margin-bottom: 14px;
+      border-radius: 999px; border: 1px dashed rgba(57,213,255,0.35);
+      background: rgba(57,213,255,0.06);
+      font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.0)), var(--panel);
+      border: 1px solid rgba(122,240,198,0.14);
+      border-radius: 22px; padding: 18px; box-shadow: var(--shadow);
+    }
+
+    /* Viewer-specific styles */
+    .viewer-controls { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+    .viewer-controls input[type="text"] { background: transparent; border: 1px solid rgba(122,240,198,0.08); padding:8px 10px; border-radius:10px; color:var(--text); }
+    .file-btn input { display:none; }
+    #viewerWrap { position:relative; height:100%; }
+    #viewerFallback { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
+
+    /* Cards */
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { border-radius: 18px; padding: 16px; border: 1px solid rgba(122,240,198,0.14); background: var(--panel); }
+    .card h3 { margin: 0 0 6px; font-size: 16px; letter-spacing: .02em; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+    /* Footer */
+    footer { margin: 40px 0 20px; color: var(--muted); font-size: 13px; }
+
+    /* Edit mode cues */
+    .editable[contenteditable="true"] { outline: 2px dashed var(--accent); outline-offset: 4px; }
+    .hint { position: fixed; right: 14px; bottom: 14px; font-size: 12px; color: var(--muted); opacity: .8; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <!-- model-viewer (used to display GLB/GLTF) -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</head>
+<body>
+  <header class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1 class="editable" data-edit>AXIOM ROBOTICS LAB</h1>
+        <div class="muted editable" data-edit>Autonomous systems • Mechatronics • Human‑in‑the‑loop</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="toggleEdit" title="Toggle editing (E)">✎ Edit</button>
+      <button class="btn" id="saveBtn" title="Download this page (Ctrl/⌘+S)">⬇ Save .html</button>
+      <button class="btn" id="saveEmbedBtn" title="Download and embed uploaded model (if any)">⬇ Embed + Save</button>
+      <button class="btn" id="themeBtn" title="Switch theme">☼ Theme</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <span class="chip">Sci‑Fi • Minimal</span>
+        <h2 class="title editable" data-edit>Designing precise, resilient robotics for real‑world tasks.</h2>
+        <p class="subtitle editable" data-edit>
+          From 6‑DOF manipulators to vision‑guided pick‑and‑place, we build low‑latency control stacks
+          and robust hardware using lightweight composites and modular kinematics.
+        </p>
+      </div>
+
+      <!-- ===== Viewer panel: allows upload / paste URL / use example model ===== -->
+      <div class="panel" style="height: 360px; display:flex; flex-direction:column; justify-content:flex-start;">
+        <div class="viewer-controls">
+          <label class="btn file-btn">
+            Upload .glb
+            <input type="file" id="glbFile" accept=".glb,.gltf,.bin" />
+          </label>
+
+          <input id="glbUrlInput" type="text" placeholder="Paste model URL (https://...)" aria-label="Model URL" />
+          <button class="btn" id="loadUrlBtn">Load URL</button>
+          <button class="btn" id="exampleBtn" title="Load a small example model">Use Example</button>
+
+          <label class="btn" style="align-items:center;"><input id="zoomToggle" type="checkbox" checked style="margin-right:6px;">Zoom</label>
+        </div>
+
+        <div id="viewerWrap" style="flex:1; position:relative;">
+          <!-- Note: no default src to avoid automatic fetch (prevents 404). User must load a model. -->
+          <model-viewer id="modelViewer" style="width:100%; height:100%; border-radius:14px; background:var(--panel);" camera-controls auto-rotate ar></model-viewer>
+
+          <!-- Fallback UI shown when no model loaded or if model fails to load -->
+          <div id="viewerFallback">
+            <svg width="160" height="100" viewBox="0 0 360 240" aria-hidden="true">
+              <defs>
+                <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#39d5ff"/>
+                  <stop offset="100%" stop-color="#7af0c6"/>
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="360" height="240" rx="12" fill="none" stroke="url(#g2)" opacity="0.15"/>
+              <g stroke="url(#g2)" stroke-width="3" fill="none">
+                <circle cx="70" cy="180" r="24"/>
+                <path d="M94 176 L150 150 L200 120 L260 110"/>
+                <circle cx="150" cy="150" r="12"/>
+                <circle cx="200" cy="120" r="10"/>
+                <circle cx="260" cy="110" r="8"/>
+              </g>
+            </svg>
+            <div class="muted" style="text-align:center; max-width:240px;">No 3D model loaded. Upload a .glb file or paste a model URL above to preview a 3D object here.</div>
+          </div>
+        </div>
+
+        <div id="viewerStatus" class="muted" style="margin-top:10px; font-size:13px;">Status: idle</div>
+      </div>
+    </section>
+
+    <section class="grid" style="margin-top: 12px;">
+      <article class="card">
+        <h3 class="editable" data-edit>6‑DOF Manipulator</h3>
+        <p class="editable" data-edit>Lightweight arm with harmonic drive joints, &gt;0.2 mm repeatability, ROS 2 control.</p>
+      </article>
+      <article class="card">
+        <h3 class="editable" data-edit>Vision & Grasping</h3>
+        <p class="editable" data-edit>Real‑time inference on‑edge (YOLO‑N), suction + parallel gripper end‑effectors.</p>
+      </article>
+      <article class="card">
+        <h3 class="editable" data-edit>Safety & HIL</h3>
+        <p class="editable" data-edit>Torque limits, soft‑stops, E‑stop chain, and human‑in‑the‑loop teleop.</p>
+      </article>
+    </section>
+
+    <section class="panel" style="margin-top: 16px;">
+      <h3 class="editable" data-edit>Featured Project — Cap Pick‑and‑Place</h3>
+      <p class="editable" data-edit>
+        A compact 6‑DOF robot arm performs reliable pick‑and‑place of pen caps from random poses using
+        a custom gripper and suction array. Pipeline: camera → detection → pose solve → motion plan → grasp.
+      </p>
+      <ul>
+        <li class="editable" data-edit>Cycle time: <strong>1.2 s</strong> (avg)</li>
+        <li class="editable" data-edit>Accuracy: <strong>±0.5 mm</strong> at the end‑effector</li>
+        <li class="editable" data-edit>Controller: <strong>Model‑based feedforward + PID</strong></li>
+      </ul>
+    </section>
+
+    <footer>
+      <div class="editable" data-edit>
+        © <span id="year"></span> Axiom Robotics • Surat, IN • contact@axiom.dev
+      </div>
+    </footer>
+  </main>
+
+  <div class="hint">Tip: Press <b>E</b> to toggle Edit · <b>Ctrl/⌘+S</b> to Save · Use ☼ to switch theme</div>
+
+  <script>
+    // ====== Tiny Editor Controls (no frameworks) ======
+    const htmlTag = document.documentElement;
+    const editBtn = document.getElementById('toggleEdit');
+    const saveBtn = document.getElementById('saveBtn');
+    const saveEmbedBtn = document.getElementById('saveEmbedBtn');
+    const themeBtn = document.getElementById('themeBtn');
+
+    const setEditMode = (on) => {
+      document.querySelectorAll('[data-edit]').forEach(el => {
+        el.setAttribute('contenteditable', on);
+        el.spellcheck = false;
+      });
+      editBtn.textContent = on ? '✓ Editing' : '✎ Edit';
+    };
+
+    let editing = false;
+    setEditMode(editing);
+
+    editBtn.addEventListener('click', () => { editing = !editing; setEditMode(editing); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'e' && !e.metaKey && !e.ctrlKey) {
+        editing = !editing; setEditMode(editing);
+      }
+      // Save with Ctrl/Cmd+S
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        downloadHTML();
+      }
+    });
+
+    // Theme toggle persists in localStorage
+    const THEME_KEY = 'axiom-theme';
+    const applyTheme = (t) => htmlTag.setAttribute('data-theme', t);
+    const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(savedTheme);
+    themeBtn.addEventListener('click', () => {
+      const next = htmlTag.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next); localStorage.setItem(THEME_KEY, next);
+    });
+
+    // ===== Model loading / error handling (fixes 404 problem by never auto-fetching a missing file) =====
+    const modelViewer = document.getElementById('modelViewer');
+    const fallback = document.getElementById('viewerFallback');
+    const status = document.getElementById('viewerStatus');
+    const glbFile = document.getElementById('glbFile');
+    const glbUrlInput = document.getElementById('glbUrlInput');
+    const loadUrlBtn = document.getElementById('loadUrlBtn');
+    const exampleBtn = document.getElementById('exampleBtn');
+    const zoomToggle = document.getElementById('zoomToggle');
+
+    let currentBlobUrl = null;      // URL.createObjectURL for uploaded file
+    let currentFile = null;         // File object when user uploads
+
+    function showFallback(show, message) {
+      fallback.style.display = show ? 'flex' : 'none';
+      status.textContent = show ? ('Status: ' + (message || 'no model loaded')) : 'Status: model loaded';
+    }
+
+    // Initially show fallback (no src) to avoid automatic network request that could 404
+    showFallback(true);
+
+    // Upload file
+    glbFile.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      await loadFile(file);
+    });
+
+    async function loadFile(file) {
+      // revoke previous
+      if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+      currentFile = file;
+      currentBlobUrl = URL.createObjectURL(file);
+      status.textContent = 'Status: loading ' + file.name + ' ...';
+      // set src to blob url (this avoids 404s for remote missing files)
+      modelViewer.src = currentBlobUrl;
+      // allow zoom setting
+      updateZoom();
+    }
+
+    // Load from URL (user-provided remote path). Only triggered on button click to avoid auto 404s.
+    loadUrlBtn.addEventListener('click', () => {
+      const url = glbUrlInput.value.trim();
+      if (!url) { alert('Paste a valid URL first.'); return; }
+      // revoke previous blob if loaded
+      if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; currentFile = null; }
+      status.textContent = 'Status: loading from URL ...';
+      modelViewer.src = url; // model-viewer will fetch this — errors will be handled below
+      updateZoom();
+    });
+
+    // Example button — does not auto-load until clicked. If this URL ever 404s, user will see a clear error and can upload.
+    exampleBtn.addEventListener('click', () => {
+      const example = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
+      if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; currentFile = null; }
+      status.textContent = 'Status: loading example model ...';
+      modelViewer.src = example;
+      updateZoom();
+    });
+
+    // Toggle zoom
+    function updateZoom() {
+      if (zoomToggle.checked) {
+        modelViewer.removeAttribute('disable-zoom');
+      } else {
+        modelViewer.setAttribute('disable-zoom', '');
+      }
+    }
+    zoomToggle.addEventListener('change', updateZoom);
+    updateZoom();
+
+    // model-viewer events: success & error handling
+    modelViewer.addEventListener('load', () => {
+      // 'load' fires when the model is ready — hide fallback
+      showFallback(false);
+      status.textContent = 'Status: model loaded';
+    });
+
+    modelViewer.addEventListener('error', (ev) => {
+      console.error('model-viewer error event:', ev);
+      showFallback(true, 'failed to load model');
+      // keep src empty if it was a failed remote URL to avoid repeated network attempts on save
+      // but do not revoke local blob URLs (they can be retried)
+      if (!currentBlobUrl) {
+        try { modelViewer.removeAttribute('src'); } catch(e){}
+      }
+    });
+
+    // ===== Saving / embedding logic =====
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadHTML() {
+      const doctype = '<!DOCTYPE html>';
+      const html = doctype + '\n' + document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: 'text/html' });
+      downloadBlob(blob, 'axiom-robotics.html');
+    }
+
+    // Save (normal)
+    saveBtn.addEventListener('click', downloadHTML);
+
+    // Save + embed: if user uploaded a local file, embed it as base64 into the downloaded HTML so the file remains with the page.
+    saveEmbedBtn.addEventListener('click', async () => {
+      if (!currentFile) {
+        // nothing to embed — fall back to normal save
+        downloadHTML();
+        return;
+      }
+
+      const file = currentFile;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arrayBuffer = reader.result;
+        const base64 = arrayBufferToBase64(arrayBuffer);
+        const dataUrl = 'data:application/octet-stream;base64,' + base64;
+
+        // Build a downloadable HTML with the model's src replaced by the data URL
+        // We take the current documentElement.outerHTML and replace the model-viewer id="modelViewer" tag to include the embedded src
+        let outer = document.documentElement.outerHTML;
+        // Simple replacement — add src to the model-viewer tag where id="modelViewer"
+        outer = outer.replace(/(<model-viewer[^>]*id=["']modelViewer["'][^>]*)(>)/i, `$1 src=\"${dataUrl}\" $2`);
+
+        const final = '<!DOCTYPE html>\n' + outer;
+        const blob = new Blob([final], { type: 'text/html' });
+        downloadBlob(blob, 'axiom-robotics-embedded.html');
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 0x8000; // keep from stack overflow on large files
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+      return btoa(binary);
+    }
+
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Small accessibility: when a model is not loaded users may want to use keyboard to paste URL and press Enter
+    glbUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { loadUrlBtn.click(); }
+    });
+
+    // Clean up blob URL when page unloads
+    window.addEventListener('beforeunload', () => { if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl); });
+
+  </script>
+
+  <!-- ===== How to edit (quick) =====
+    Fix explanation:
+      - The page no longer attempts to fetch a GLB automatically on load (prevents 404 errors).
+      - You must explicitly Upload a .glb or paste a model URL and click "Load URL" or "Use Example".
+      - If a remote URL fails to load you'll get a clear error state and the fallback graphic is shown.
+      - You can embed an uploaded model into the saved HTML using "Embed + Save" so the downloaded file includes the .glb.
+
+    1) Click ✎ Edit (or press E) → blue dashed outlines show editable text.
+    2) Upload a .glb or paste a model URL and press Load.
+    3) Press Ctrl/⌘+S or click “Save .html” to download your customized page (no model embedded).
+    4) Click "Embed + Save" to download a page that includes your uploaded model inline (useful for sharing).
+  -->
+</body>
+</html>
